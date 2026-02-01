@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface YouTubePlayerProps {
   videoId: string;
   isPlaying: boolean;
-  isRevealed?: boolean; // true = vidéo visible, false = floutée
+  isRevealed?: boolean;
   onReady?: () => void;
-  showOverlay?: boolean; // Afficher l'overlay "En attente de buzz"
+  showOverlay?: boolean;
 }
 
 declare global {
@@ -27,82 +27,120 @@ export default function YouTubePlayer({
 }: YouTubePlayerProps) {
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isReady, setIsReady] = useState(false);
+  const currentVideoRef = useRef<string>(videoId);
 
+  // Charger l'API YouTube
   useEffect(() => {
-    // Load YouTube IFrame API
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+    if (window.YT && window.YT.Player) {
+      initPlayer();
+    } else {
+      // Charger le script YouTube IFrame API
+      const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+      if (!existingScript) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
 
+      // Callback quand l'API est prête
       window.onYouTubeIframeAPIReady = () => {
         initPlayer();
       };
-    } else {
-      initPlayer();
     }
 
     function initPlayer() {
-      if (containerRef.current && !playerRef.current) {
-        playerRef.current = new window.YT.Player(containerRef.current, {
-          height: '100%',
-          width: '100%',
-          videoId: videoId,
-          playerVars: {
-            autoplay: 0,
-            controls: 1,
-            disablekb: 0,
-            fs: 1,
-            modestbranding: 1,
-            playsinline: 1,
-            rel: 0,
+      if (!containerRef.current || playerRef.current) return;
+
+      playerRef.current = new window.YT.Player(containerRef.current, {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          disablekb: 0,
+          fs: 1,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: (event: any) => {
+            setIsReady(true);
+            currentVideoRef.current = videoId;
+            if (isPlaying) {
+              event.target.playVideo();
+            }
+            onReady?.();
           },
-          events: {
-            onReady: (event: any) => {
-              onReady?.();
-            },
+          onStateChange: (event: any) => {
+            // YT.PlayerState.PLAYING = 1
+            if (event.data === 1) {
+              console.log('YouTube: Playing');
+            }
           },
-        });
-      }
+          onError: (event: any) => {
+            console.error('YouTube Error:', event.data);
+          },
+        },
+      });
     }
 
     return () => {
-      if (playerRef.current) {
+      if (playerRef.current && playerRef.current.destroy) {
         playerRef.current.destroy();
         playerRef.current = null;
+        setIsReady(false);
       }
     };
-  }, [videoId, onReady]);
+  }, []);
 
+  // Gérer Play/Pause
   useEffect(() => {
-    if (playerRef.current && playerRef.current.playVideo && playerRef.current.pauseVideo) {
+    if (!isReady || !playerRef.current) return;
+
+    try {
       if (isPlaying) {
         playerRef.current.playVideo();
       } else {
         playerRef.current.pauseVideo();
       }
+    } catch (e) {
+      console.error('Play/Pause error:', e);
     }
-  }, [isPlaying]);
+  }, [isPlaying, isReady]);
 
-  // Changer la vidéo si l'ID change
+  // Changer de vidéo quand l'ID change
   useEffect(() => {
-    if (playerRef.current && playerRef.current.loadVideoById) {
-      playerRef.current.loadVideoById(videoId);
+    if (!isReady || !playerRef.current) return;
+    if (currentVideoRef.current === videoId) return;
+
+    try {
+      currentVideoRef.current = videoId;
+      playerRef.current.loadVideoById({
+        videoId: videoId,
+        startSeconds: 0,
+      });
+    } catch (e) {
+      console.error('Load video error:', e);
     }
-  }, [videoId]);
+  }, [videoId, isReady]);
 
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden">
-      {/* YouTube Player */}
-      <motion.div
-        ref={containerRef}
-        className="w-full h-full"
-        animate={{
+    <div className="relative w-full h-full rounded-2xl overflow-hidden bg-black">
+      {/* Container pour le blur - wrapper autour du player */}
+      <div
+        className="w-full h-full transition-all duration-700"
+        style={{
           filter: isRevealed ? 'blur(0px)' : 'blur(40px)',
+          transform: isRevealed ? 'scale(1)' : 'scale(1.1)',
         }}
-        transition={{ duration: 0.8, ease: 'easeInOut' }}
-      />
+      >
+        {/* YouTube Player - div standard pour l'API */}
+        <div ref={containerRef} className="w-full h-full" />
+      </div>
 
       {/* Overlay "En attente de buzz" */}
       <AnimatePresence>
@@ -111,7 +149,7 @@ export default function YouTubePlayer({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 pointer-events-none z-10"
           >
             {/* Animation d'onde sonore */}
             <div className="relative w-32 h-32 mb-6">
@@ -154,9 +192,9 @@ export default function YouTubePlayer({
         )}
       </AnimatePresence>
 
-      {/* Glow effect autour du player */}
+      {/* Glow effect */}
       <div
-        className="absolute inset-0 pointer-events-none rounded-2xl"
+        className="absolute inset-0 pointer-events-none rounded-2xl z-20"
         style={{
           boxShadow: isRevealed
             ? '0 0 30px rgba(255, 0, 255, 0.5), 0 0 60px rgba(0, 255, 255, 0.3)'
