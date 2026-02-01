@@ -1,122 +1,232 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Tv, Smartphone, Zap } from 'lucide-react';
+import { Tv, Smartphone, Star, Sparkles, Music, Trophy, Zap } from 'lucide-react';
 import Link from 'next/link';
+
+// Stars background component
+function StarsBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(50)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-yellow-400"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            fontSize: `${Math.random() * 10 + 5}px`,
+          }}
+          animate={{
+            opacity: [0.2, 1, 0.2],
+            scale: [0.8, 1.2, 0.8],
+          }}
+          transition={{
+            duration: 2 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+          }}
+        >
+          ★
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center p-4 overflow-hidden">
-      {/* Animated background grid */}
-      <div className="absolute inset-0 overflow-hidden opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'linear-gradient(#00ffff 1px, transparent 1px), linear-gradient(90deg, #00ffff 1px, transparent 1px)',
-          backgroundSize: '50px 50px',
-        }} />
-      </div>
+    <div className="min-h-screen relative overflow-hidden tv-noise">
+      <StarsBackground />
 
-      <main className="relative z-10 max-w-4xl mx-auto text-center">
-        {/* Logo Animation */}
+      {/* Spotlight effect */}
+      <div className="absolute inset-0 spotlight pointer-events-none" />
+
+      <main className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+        {/* Main Title */}
         <motion.div
-          initial={{ scale: 0, rotate: -180 }}
+          initial={{ scale: 0, rotate: -10 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', duration: 1 }}
-          className="mb-8"
+          transition={{ type: 'spring', duration: 0.8, bounce: 0.5 }}
+          className="text-center mb-8"
         >
-          <Zap className="w-24 h-24 mx-auto text-[#ff00ff] mb-6" />
-          <h1 className="text-7xl md:text-8xl font-bold mb-4 neon-glow-cyan text-[#00ffff]">
-            PULSEGUIZ
-          </h1>
+          {/* Decorative stars */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+            className="absolute -top-10 -left-10 text-6xl text-yellow-400"
+          >
+            ✦
+          </motion.div>
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+            className="absolute -top-5 -right-10 text-4xl text-orange-400"
+          >
+            ★
+          </motion.div>
+
+          {/* Logo */}
+          <motion.div
+            animate={{
+              textShadow: [
+                '0 0 20px #FFD700',
+                '0 0 40px #FF6B00',
+                '0 0 20px #FFD700',
+              ]
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="relative"
+          >
+            <h1 className="text-7xl md:text-9xl font-black text-3d gold-text tracking-tight">
+              PULSE
+            </h1>
+            <h1 className="text-7xl md:text-9xl font-black text-3d gold-text tracking-tight -mt-4">
+              QUIZ
+            </h1>
+          </motion.div>
+
+          {/* Subtitle banner */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="title-banner mt-6 inline-block"
+          >
+            <span className="text-black font-bold text-xl md:text-2xl tracking-widest">
+              LE BLIND TEST MUSICAL
+            </span>
+          </motion.div>
         </motion.div>
 
+        {/* Tagline */}
         <motion.p
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-2xl md:text-3xl text-[#e0e0ff] mb-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="text-2xl md:text-3xl text-white text-center mb-12 max-w-2xl"
+          style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
         >
-          Real-Time Musical Blind Test
-        </motion.p>
-
-        <motion.p
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-lg text-[#888] mb-12 max-w-2xl mx-auto"
-        >
-          The ultimate party game. One screen, multiple phones, instant buzzer battles.
+          <span className="text-yellow-400">★</span> Un écran, plusieurs téléphones, des battles de buzzer instantanés ! <span className="text-yellow-400">★</span>
         </motion.p>
 
         {/* CTA Buttons */}
         <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          className="grid md:grid-cols-2 gap-8 max-w-3xl w-full px-4"
         >
           {/* Host Button */}
           <Link href="/host">
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, rotate: -1 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-br from-[#00ffff] to-[#0080ff] p-8 rounded-2xl cursor-pointer group relative overflow-hidden"
+              className="game-panel p-8 cursor-pointer group"
             >
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
-              <Tv className="w-16 h-16 mx-auto mb-4 text-black" />
-              <h2 className="text-3xl font-bold text-black mb-2">HOST GAME</h2>
-              <p className="text-black/70">
-                Display on TV/Computer
-              </p>
+              <div className="flex flex-col items-center">
+                <motion.div
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Tv className="w-20 h-20 text-yellow-400 mb-4" />
+                </motion.div>
+                <h2 className="text-3xl font-black gold-text mb-2">
+                  ANIMATEUR
+                </h2>
+                <p className="text-white/80 text-center">
+                  Afficher sur TV / Ordinateur
+                </p>
+                <motion.div
+                  className="mt-4 retro-btn px-6 py-2"
+                  whileHover={{ scale: 1.1 }}
+                >
+                  CRÉER UNE PARTIE
+                </motion.div>
+              </div>
             </motion.div>
           </Link>
 
           {/* Play Button */}
           <Link href="/play">
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, rotate: 1 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-br from-[#ff00ff] to-[#ff006e] p-8 rounded-2xl cursor-pointer group relative overflow-hidden"
+              className="game-panel p-8 cursor-pointer group"
+              style={{ borderColor: '#FF0040' }}
             >
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
-              <Smartphone className="w-16 h-16 mx-auto mb-4 text-white" />
-              <h2 className="text-3xl font-bold text-white mb-2">JOIN GAME</h2>
-              <p className="text-white/70">
-                Use your phone as controller
-              </p>
+              <div className="flex flex-col items-center">
+                <motion.div
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                >
+                  <Smartphone className="w-20 h-20 text-red-400 mb-4" />
+                </motion.div>
+                <h2 className="text-3xl font-black text-red-400 mb-2" style={{ textShadow: '0 0 20px #FF0040' }}>
+                  JOUEUR
+                </h2>
+                <p className="text-white/80 text-center">
+                  Utiliser ton téléphone comme buzzer
+                </p>
+                <motion.div
+                  className="mt-4 px-6 py-2 font-bold uppercase tracking-wider"
+                  style={{
+                    background: 'linear-gradient(180deg, #FF0040 0%, #CC0030 100%)',
+                    border: '4px solid #FFD700',
+                    borderRadius: '15px',
+                    boxShadow: '0 6px 0 #990020, 0 10px 20px rgba(0,0,0,0.4)',
+                  }}
+                  whileHover={{ scale: 1.1 }}
+                >
+                  REJOINDRE
+                </motion.div>
+              </div>
             </motion.div>
           </Link>
         </motion.div>
 
         {/* Features */}
         <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.9 }}
-          className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.3 }}
+          className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full px-4"
         >
-          <div className="bg-[#1a1a2e] border border-[#2a2a4e] rounded-xl p-6">
-            <div className="text-[#00ffff] text-4xl mb-3">⚡</div>
-            <h3 className="text-xl font-bold text-[#00ffff] mb-2">Lightning Fast</h3>
-            <p className="text-[#888]">
-              Real-time buzzer system. First to buzz wins the right to answer.
+          <div className="game-panel p-6 text-center">
+            <Zap className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
+            <h3 className="text-xl font-bold text-yellow-400 mb-2">ULTRA RAPIDE</h3>
+            <p className="text-white/70 text-sm">
+              Premier à buzzer gagne le droit de répondre !
             </p>
           </div>
 
-          <div className="bg-[#1a1a2e] border border-[#2a2a4e] rounded-xl p-6">
-            <div className="text-[#ff00ff] text-4xl mb-3">🎵</div>
-            <h3 className="text-xl font-bold text-[#ff00ff] mb-2">YouTube Powered</h3>
-            <p className="text-[#888]">
-              Play audio from YouTube while keeping the video hidden.
+          <div className="game-panel p-6 text-center" style={{ borderColor: '#FF6B00' }}>
+            <Music className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+            <h3 className="text-xl font-bold text-orange-400 mb-2">YOUTUBE INTÉGRÉ</h3>
+            <p className="text-white/70 text-sm">
+              Des millions de chansons à deviner
             </p>
           </div>
 
-          <div className="bg-[#1a1a2e] border border-[#2a2a4e] rounded-xl p-6">
-            <div className="text-[#bd00ff] text-4xl mb-3">🏆</div>
-            <h3 className="text-xl font-bold text-[#bd00ff] mb-2">Live Scoreboard</h3>
-            <p className="text-[#888]">
-              Track scores in real-time with dynamic animations.
+          <div className="game-panel p-6 text-center" style={{ borderColor: '#FF0040' }}>
+            <Trophy className="w-12 h-12 text-red-400 mx-auto mb-3" />
+            <h3 className="text-xl font-bold text-red-400 mb-2">SCOREBOARD LIVE</h3>
+            <p className="text-white/70 text-sm">
+              Suivez les scores en temps réel
             </p>
           </div>
+        </motion.div>
+
+        {/* Bottom decoration */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+          className="mt-12 flex items-center gap-4 text-yellow-400/50"
+        >
+          <Sparkles className="w-6 h-6" />
+          <span className="text-sm uppercase tracking-widest">Le jeu qui enflamme vos soirées</span>
+          <Sparkles className="w-6 h-6" />
         </motion.div>
       </main>
     </div>

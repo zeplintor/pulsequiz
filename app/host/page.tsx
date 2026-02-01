@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, SkipForward, Check, X, Users, Search, Music, TrendingUp } from 'lucide-react';
+import { Play, Pause, SkipForward, Check, X, Users, Search, Music, TrendingUp, Star, Trophy, Sparkles } from 'lucide-react';
 import YouTubePlayer from '@/components/YouTubePlayer';
-import { createSession, subscribeToSession, subscribeToPlayers, startNextTrack, awardPoints, rejectBuzz, updateSessionState } from '@/lib/firestore';
+import { createSession, subscribeToSession, subscribeToPlayers, awardPoints, rejectBuzz, updateSessionState } from '@/lib/firestore';
 import type { GameSession, Player, Track } from '@/lib/types';
 
 export default function HostPage() {
@@ -12,8 +12,6 @@ export default function HostPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [pin, setPin] = useState<string>('');
-
-  // Search states
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -29,9 +27,7 @@ export default function HostPage() {
     try {
       const response = await fetch('/api/trending');
       const data = await response.json();
-      if (data.success) {
-        setTrendingVideos(data.results);
-      }
+      if (data.success) setTrendingVideos(data.results);
     } catch (error) {
       console.error('Failed to fetch trending:', error);
     }
@@ -39,9 +35,7 @@ export default function HostPage() {
 
   const initializeSession = async () => {
     try {
-      // Créer une session vide au début
-      const { createSession: createEmptySession } = await import('@/lib/firestore');
-      const newPin = await createEmptySession([]);
+      const newPin = await createSession([]);
       setPin(newPin);
       setLoading(false);
     } catch (error) {
@@ -52,33 +46,19 @@ export default function HostPage() {
 
   useEffect(() => {
     if (!pin) return;
-
-    const unsubSession = subscribeToSession(pin, (sessionData) => {
-      setSession(sessionData);
-    });
-
-    const unsubPlayers = subscribeToPlayers(pin, (playersData) => {
-      setPlayers(playersData);
-    });
-
-    return () => {
-      unsubSession();
-      unsubPlayers();
-    };
+    const unsubSession = subscribeToSession(pin, setSession);
+    const unsubPlayers = subscribeToPlayers(pin, setPlayers);
+    return () => { unsubSession(); unsubPlayers(); };
   }, [pin]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-
     setIsSearching(true);
     try {
       const response = await fetch(`/api/search?query=${encodeURIComponent(searchQuery)}`);
       const data = await response.json();
-
-      if (data.success) {
-        setSearchResults(data.results);
-      }
+      if (data.success) setSearchResults(data.results);
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
@@ -88,15 +68,12 @@ export default function HostPage() {
 
   const handleSelectVideo = async (video: any) => {
     if (!pin) return;
-
     const track: Track = {
       id: video.id,
       youtubeId: video.youtubeId,
       title: video.title,
       artist: video.artist,
     };
-
-    // Ajouter la vidéo à la playlist et la jouer immédiatement
     await updateSessionState(pin, {
       currentTrack: track,
       currentTrackIndex: 0,
@@ -105,7 +82,6 @@ export default function HostPage() {
       buzzerLockedAt: null,
       playlist: [track],
     });
-
     setShowSearchModal(false);
     setSearchQuery('');
     setSearchResults([]);
@@ -113,27 +89,19 @@ export default function HostPage() {
 
   const handleUseTrending = async () => {
     if (!pin || trendingVideos.length === 0) return;
-
-    // Sélectionner une vidéo aléatoire parmi les tendances
     const randomVideo = trendingVideos[Math.floor(Math.random() * trendingVideos.length)];
     await handleSelectVideo(randomVideo);
   };
 
   const handlePlayPause = async () => {
     if (!pin || !session) return;
-    await updateSessionState(pin, {
-      state: session.state === 'playing' ? 'paused' : 'playing',
-    });
+    await updateSessionState(pin, { state: session.state === 'playing' ? 'paused' : 'playing' });
   };
 
   const handleCorrect = async () => {
     if (!pin || !session?.activeBuzzer) return;
     await awardPoints(pin, session.activeBuzzer, 100);
-
-    // Révéler la vidéo pendant 5 secondes avant de passer à la suivante
-    setTimeout(() => {
-      setShowSearchModal(true);
-    }, 5000);
+    setTimeout(() => setShowSearchModal(true), 5000);
   };
 
   const handleIncorrect = async () => {
@@ -146,55 +114,57 @@ export default function HostPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-[#00ffff] text-4xl font-bold neon-glow-cyan"
+          animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="text-6xl font-black gold-text text-3d"
         >
-          Initializing PulseQuiz...
+          CHARGEMENT...
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white p-8">
-      {/* Header avec PIN et Recherche */}
+    <div className="min-h-screen tv-noise p-6">
+      {/* Header */}
       <header className="mb-6">
         <div className="flex items-center justify-between">
+          {/* Logo */}
           <motion.div
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
+            className="flex items-center gap-4"
           >
-            <h1 className="text-5xl font-bold neon-glow-cyan text-[#00ffff]">
-              PULSEGUIZ
+            <Star className="w-10 h-10 text-yellow-400" />
+            <h1 className="text-5xl font-black gold-text text-3d">
+              PULSEQUIZ
             </h1>
           </motion.div>
 
+          {/* PIN Display */}
           <motion.div
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="flex items-center gap-4"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="flex items-center gap-6"
           >
-            <div className="flex items-center gap-2 text-[#00ffff]">
-              <Users size={20} />
-              <span className="text-lg">{players.length} players</span>
+            <div className="flex items-center gap-2 game-panel px-4 py-2">
+              <Users className="w-6 h-6 text-yellow-400" />
+              <span className="text-2xl font-bold text-white">{players.length}</span>
+              <span className="text-white/60">joueurs</span>
             </div>
 
-            <div className="bg-[#1a1a2e] border-2 border-[#ff00ff] rounded-lg px-6 py-2 neon-border-magenta">
-              <span className="text-sm text-[#888]">PIN:</span>
-              <span className="text-3xl font-mono font-bold text-[#ff00ff] neon-glow-magenta ml-2">
-                {pin}
-              </span>
+            <div className="pin-display animated-border">
+              {pin}
             </div>
 
             <button
               onClick={() => setShowSearchModal(true)}
-              className="bg-[#bd00ff] hover:bg-[#9900cc] text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2"
+              className="retro-btn px-6 py-3 flex items-center gap-2"
             >
               <Search size={20} />
-              Rechercher
+              RECHERCHER
             </button>
           </motion.div>
         </div>
@@ -203,15 +173,15 @@ export default function HostPage() {
       <div className="grid grid-cols-3 gap-6">
         {/* Player YouTube Central */}
         <div className="col-span-2">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="relative"
-          >
-            {session?.currentTrack ? (
-              <div className="space-y-4">
-                {/* Player */}
-                <div className="aspect-video bg-black rounded-2xl overflow-hidden">
+          {session?.currentTrack ? (
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="space-y-4"
+            >
+              {/* TV Frame */}
+              <div className="tv-frame rounded-3xl overflow-hidden">
+                <div className="aspect-video bg-black relative scanlines">
                   <YouTubePlayer
                     videoId={session.currentTrack.youtubeId}
                     isPlaying={session.state === 'playing'}
@@ -219,81 +189,103 @@ export default function HostPage() {
                     showOverlay={session.state === 'playing' && !isRevealed}
                   />
                 </div>
-
-                {/* Titre et Artiste (révélés uniquement après buzz) */}
-                <AnimatePresence>
-                  {isRevealed && (
-                    <motion.div
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: 20, opacity: 0 }}
-                      className="bg-[#1a1a2e] border-2 border-[#ff00ff] rounded-xl p-6 text-center neon-border-magenta"
-                    >
-                      <h2 className="text-4xl font-bold text-[#00ffff] neon-glow-cyan mb-2">
-                        {session.currentTrack.title}
-                      </h2>
-                      <p className="text-2xl text-[#ff00ff] neon-glow-magenta">
-                        {session.currentTrack.artist}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Contrôles de lecture */}
-                <div className="flex gap-3 justify-center">
-                  <button
-                    onClick={handlePlayPause}
-                    className="bg-[#bd00ff] hover:bg-[#9900cc] text-white font-bold py-3 px-8 rounded-lg transition-all flex items-center gap-2"
-                  >
-                    {session.state === 'playing' ? <Pause size={20} /> : <Play size={20} />}
-                    {session.state === 'playing' ? 'PAUSE' : 'PLAY'}
-                  </button>
-
-                  <button
-                    onClick={() => setShowSearchModal(true)}
-                    className="bg-[#ff006e] hover:bg-[#cc0058] text-white font-bold py-3 px-8 rounded-lg transition-all flex items-center gap-2"
-                  >
-                    <SkipForward size={20} />
-                    SUIVANT
-                  </button>
-                </div>
               </div>
-            ) : (
-              <div className="aspect-video bg-[#1a1a2e] border-2 border-[#2a2a4e] rounded-2xl flex flex-col items-center justify-center">
-                <Music className="w-24 h-24 text-[#00ffff] mb-6 opacity-50" />
-                <h2 className="text-3xl font-bold text-[#00ffff] mb-4">
-                  Aucune musique sélectionnée
-                </h2>
-                <button
-                  onClick={handleUseTrending}
-                  className="bg-[#00ffff] hover:bg-[#00cccc] text-black font-bold py-3 px-6 rounded-lg transition-all flex items-center gap-2"
-                >
-                  <TrendingUp size={20} />
-                  Utiliser les Tendances
+
+              {/* Song Info - Only when revealed */}
+              <AnimatePresence>
+                {isRevealed && (
+                  <motion.div
+                    initial={{ y: 30, opacity: 0, scale: 0.9 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: 30, opacity: 0 }}
+                    className="game-panel p-6 text-center winner-glow"
+                  >
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                      <Sparkles className="w-8 h-8 text-yellow-400" />
+                      <span className="text-yellow-400 text-xl uppercase tracking-wider">La réponse était</span>
+                      <Sparkles className="w-8 h-8 text-yellow-400" />
+                    </div>
+                    <h2 className="text-4xl font-black gold-text text-3d mb-2">
+                      {session.currentTrack.title}
+                    </h2>
+                    <p className="text-2xl text-white/80">
+                      {session.currentTrack.artist}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Controls */}
+              <div className="flex gap-4 justify-center">
+                <button onClick={handlePlayPause} className="retro-btn px-8 py-4 flex items-center gap-3 text-xl">
+                  {session.state === 'playing' ? <Pause size={24} /> : <Play size={24} />}
+                  {session.state === 'playing' ? 'PAUSE' : 'PLAY'}
                 </button>
                 <button
                   onClick={() => setShowSearchModal(true)}
-                  className="mt-3 bg-[#bd00ff] hover:bg-[#9900cc] text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center gap-2"
+                  className="px-8 py-4 flex items-center gap-3 text-xl font-bold uppercase"
+                  style={{
+                    background: 'linear-gradient(180deg, #FF0040 0%, #CC0030 100%)',
+                    border: '4px solid #FFD700',
+                    borderRadius: '15px',
+                    boxShadow: '0 6px 0 #990020',
+                  }}
                 >
-                  <Search size={20} />
-                  Rechercher une Musique
+                  <SkipForward size={24} />
+                  SUIVANT
                 </button>
               </div>
-            )}
-          </motion.div>
+            </motion.div>
+          ) : (
+            /* No song selected */
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className="aspect-video game-panel flex flex-col items-center justify-center"
+            >
+              <motion.div
+                animate={{ y: [0, -10, 0], rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Music className="w-32 h-32 text-yellow-400/50 mb-6" />
+              </motion.div>
+              <h2 className="text-4xl font-black gold-text mb-6">CHOISISSEZ UNE MUSIQUE</h2>
+              <div className="flex gap-4">
+                <button onClick={handleUseTrending} className="retro-btn px-8 py-4 flex items-center gap-3 text-xl">
+                  <TrendingUp size={24} />
+                  TENDANCES
+                </button>
+                <button
+                  onClick={() => setShowSearchModal(true)}
+                  className="px-8 py-4 flex items-center gap-3 text-xl font-bold uppercase"
+                  style={{
+                    background: 'linear-gradient(180deg, #9400D3 0%, #6B00A3 100%)',
+                    border: '4px solid #FFD700',
+                    borderRadius: '15px',
+                    boxShadow: '0 6px 0 #4B0073',
+                  }}
+                >
+                  <Search size={24} />
+                  RECHERCHER
+                </button>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Scoreboard */}
-        <div>
+        <div className="space-y-6">
           <motion.div
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="bg-[#1a1a2e] border-2 border-[#00ffff] rounded-xl p-6 neon-border-cyan mb-6"
+            className="game-panel p-6"
           >
-            <h2 className="text-2xl font-bold mb-4 text-[#00ffff] neon-glow-cyan">
-              SCOREBOARD
-            </h2>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <Trophy className="w-8 h-8 text-yellow-400" />
+              <h2 className="text-3xl font-black gold-text">SCORES</h2>
+            </div>
+
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
               <AnimatePresence>
                 {players.map((player, index) => (
                   <motion.div
@@ -302,56 +294,87 @@ export default function HostPage() {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 20, opacity: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                    className={`flex items-center justify-between p-4 rounded-xl border-4 ${
                       player.id === session?.activeBuzzer
-                        ? 'bg-[#ff00ff]/20 border-[#ff00ff] neon-border-magenta animate-pulse'
-                        : 'bg-[#0f0f1e] border-[#2a2a4e]'
+                        ? 'border-red-500 bg-red-500/20 winner-glow'
+                        : index === 0 && player.score > 0
+                        ? 'border-yellow-400 bg-yellow-400/10'
+                        : 'border-purple-500/50 bg-purple-500/10'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="text-xl font-bold text-[#00ffff] w-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`text-3xl font-black ${
+                        index === 0 ? 'text-yellow-400' :
+                        index === 1 ? 'text-gray-400' :
+                        index === 2 ? 'text-orange-600' : 'text-white/50'
+                      }`}>
                         #{index + 1}
                       </div>
-                      <div className="text-lg font-semibold text-white truncate">
-                        {player.name}
-                      </div>
+                      <div className="text-xl font-bold text-white">{player.name}</div>
                     </div>
-                    <div className="text-2xl font-bold text-[#ff00ff] neon-glow-magenta">
+                    <div className="score-display px-4 py-2 text-3xl font-bold">
                       {player.score}
                     </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
+
               {players.length === 0 && (
-                <div className="text-center text-[#666] text-sm py-4">
-                  En attente de joueurs...
+                <div className="text-center py-8">
+                  <motion.div
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="text-xl text-white/50"
+                  >
+                    En attente de joueurs...
+                  </motion.div>
                 </div>
               )}
             </div>
           </motion.div>
 
-          {/* Buzzer Response */}
+          {/* Buzzer Alert */}
           {buzzerPlayer && (
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-[#ff00ff]/20 border-2 border-[#ff00ff] rounded-xl p-6 neon-border-magenta"
+              initial={{ scale: 0, rotate: -10 }}
+              animate={{ scale: 1, rotate: 0 }}
+              className="game-panel p-6 winner-glow"
+              style={{ borderColor: '#FF0040' }}
             >
-              <h3 className="text-xl font-bold mb-4 text-[#ff00ff] text-center neon-glow-magenta">
-                {buzzerPlayer.name} A BUZZÉ!
-              </h3>
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+                className="text-center"
+              >
+                <div className="text-6xl mb-2">🚨</div>
+                <h3 className="text-2xl font-black text-red-400 flash-text mb-2">
+                  {buzzerPlayer.name}
+                </h3>
+                <p className="text-white/80 mb-4">A BUZZÉ !</p>
+              </motion.div>
+
               <div className="flex gap-3">
                 <button
                   onClick={handleCorrect}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-4 font-bold text-xl rounded-xl flex items-center justify-center gap-2"
+                  style={{
+                    background: 'linear-gradient(180deg, #00FF7F 0%, #00CC66 100%)',
+                    border: '4px solid #FFD700',
+                    boxShadow: '0 4px 0 #009944',
+                  }}
                 >
-                  <Check size={20} /> CORRECT
+                  <Check size={24} /> CORRECT
                 </button>
                 <button
                   onClick={handleIncorrect}
-                  className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-4 font-bold text-xl rounded-xl flex items-center justify-center gap-2"
+                  style={{
+                    background: 'linear-gradient(180deg, #FF0040 0%, #CC0030 100%)',
+                    border: '4px solid #FFD700',
+                    boxShadow: '0 4px 0 #990020',
+                  }}
                 >
-                  <X size={20} /> FAUX
+                  <X size={24} /> FAUX
                 </button>
               </div>
             </motion.div>
@@ -359,75 +382,60 @@ export default function HostPage() {
         </div>
       </div>
 
-      {/* Modal de Recherche */}
+      {/* Search Modal */}
       <AnimatePresence>
         {showSearchModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-8"
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-8"
             onClick={() => setShowSearchModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.8, y: 50 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
+              exit={{ scale: 0.8, y: 50 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#1a1a2e] border-2 border-[#00ffff] rounded-2xl p-8 max-w-4xl w-full max-h-[80vh] overflow-hidden neon-border-cyan"
+              className="game-panel p-8 max-w-4xl w-full max-h-[80vh] overflow-hidden"
             >
-              <h2 className="text-3xl font-bold text-[#00ffff] neon-glow-cyan mb-6">
-                Rechercher une Musique
-              </h2>
+              <div className="flex items-center gap-4 mb-6">
+                <Music className="w-10 h-10 text-yellow-400" />
+                <h2 className="text-4xl font-black gold-text">RECHERCHER</h2>
+              </div>
 
-              <form onSubmit={handleSearch} className="mb-6">
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Titre, artiste..."
-                    className="flex-1 bg-[#0a0a0f] border-2 border-[#00ffff] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#ff00ff] transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSearching}
-                    className="bg-[#00ffff] hover:bg-[#00cccc] disabled:bg-[#333] text-black font-bold py-3 px-6 rounded-lg transition-all"
-                  >
-                    {isSearching ? 'Recherche...' : 'Chercher'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleUseTrending}
-                    className="bg-[#ff00ff] hover:bg-[#cc00cc] text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center gap-2"
-                  >
-                    <TrendingUp size={20} />
-                    Aléatoire
-                  </button>
-                </div>
+              <form onSubmit={handleSearch} className="mb-6 flex gap-4">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Titre, artiste..."
+                  className="flex-1 bg-black/50 border-4 border-yellow-400 rounded-xl px-6 py-4 text-xl text-white focus:outline-none focus:border-orange-400"
+                />
+                <button type="submit" disabled={isSearching} className="retro-btn px-8 py-4 text-xl">
+                  {isSearching ? '...' : 'GO!'}
+                </button>
+                <button type="button" onClick={handleUseTrending} className="retro-btn px-6 py-4">
+                  <TrendingUp size={24} />
+                </button>
               </form>
 
               <div className="overflow-y-auto max-h-[50vh] space-y-3">
                 {searchResults.map((video) => (
                   <motion.button
                     key={video.id}
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: 1.02, x: 10 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleSelectVideo(video)}
-                    className="w-full bg-[#0a0a0f] border border-[#2a2a4e] hover:border-[#00ffff] rounded-lg p-4 flex items-center gap-4 transition-all text-left"
+                    className="w-full bg-purple-900/50 border-2 border-purple-500/50 hover:border-yellow-400 rounded-xl p-4 flex items-center gap-4 text-left"
                   >
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-24 h-16 object-cover rounded"
-                    />
+                    <img src={video.thumbnail} alt={video.title} className="w-28 h-20 object-cover rounded-lg" />
                     <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg line-clamp-1">
-                        {video.title}
-                      </h3>
-                      <p className="text-[#888] text-sm">{video.artist}</p>
-                      <p className="text-[#666] text-xs">{video.duration}</p>
+                      <h3 className="text-white font-bold text-lg line-clamp-1">{video.title}</h3>
+                      <p className="text-yellow-400/80">{video.artist}</p>
+                      <p className="text-white/50 text-sm">{video.duration}</p>
                     </div>
+                    <Star className="w-8 h-8 text-yellow-400/50" />
                   </motion.button>
                 ))}
               </div>

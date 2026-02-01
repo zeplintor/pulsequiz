@@ -1,56 +1,286 @@
 @import "tailwindcss";
 
+/* 🎬 PULSEGUIZ - 90's TV Game Show Theme */
+
+@font-face {
+  font-family: 'GameShow';
+  src: local('Impact'), local('Arial Black');
+}
+
 :root {
-  /* Neon Cyberpunk Theme */
-  --background: #0a0a0f;
-  --foreground: #e0e0ff;
-  --neon-cyan: #00ffff;
-  --neon-magenta: #ff00ff;
-  --neon-purple: #bd00ff;
-  --neon-blue: #0080ff;
-  --neon-pink: #ff006e;
-  --dark-bg: #0a0a0f;
-  --darker-bg: #050508;
+  /* 90's TV Color Palette */
+  --tv-gold: #FFD700;
+  --tv-orange: #FF6B00;
+  --tv-red: #FF0040;
+  --tv-pink: #FF1493;
+  --tv-purple: #9400D3;
+  --tv-blue: #00BFFF;
+  --tv-green: #00FF7F;
+  --tv-yellow: #FFFF00;
+
+  /* Backgrounds */
+  --bg-dark: #1a0a2e;
+  --bg-darker: #0d0518;
+  --bg-gradient: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
+
+  /* Text */
+  --text-primary: #FFFFFF;
+  --text-secondary: #FFD700;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-neon-cyan: var(--neon-cyan);
-  --color-neon-magenta: var(--neon-magenta);
-  --color-neon-purple: var(--neon-purple);
-  --color-neon-blue: var(--neon-blue);
-  --color-neon-pink: var(--neon-pink);
+  --color-tv-gold: var(--tv-gold);
+  --color-tv-orange: var(--tv-orange);
+  --color-tv-red: var(--tv-red);
+  --color-tv-blue: var(--tv-blue);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), 'Arial Black', sans-serif;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
-/* Neon glow effects */
-.neon-glow-cyan {
-  text-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan), 0 0 30px var(--neon-cyan);
+/* ========== 90's TV GAME SHOW EFFECTS ========== */
+
+/* Gold metallic text effect */
+.gold-text {
+  background: linear-gradient(180deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
-.neon-glow-magenta {
-  text-shadow: 0 0 10px var(--neon-magenta), 0 0 20px var(--neon-magenta), 0 0 30px var(--neon-magenta);
+/* 3D extruded text */
+.text-3d {
+  text-shadow:
+    1px 1px 0 #FF6B00,
+    2px 2px 0 #FF6B00,
+    3px 3px 0 #CC5500,
+    4px 4px 0 #CC5500,
+    5px 5px 10px rgba(0,0,0,0.5);
 }
 
-.neon-glow-purple {
-  text-shadow: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple), 0 0 30px var(--neon-purple);
+/* Glowing neon effect */
+.neon-glow {
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 20px currentColor,
+    0 0 40px currentColor;
 }
 
-.neon-border-cyan {
-  box-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan), inset 0 0 5px var(--neon-cyan);
+/* TV static noise overlay */
+.tv-noise {
+  position: relative;
+}
+.tv-noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
 }
 
-.neon-border-magenta {
-  box-shadow: 0 0 5px var(--neon-magenta), 0 0 10px var(--neon-magenta), inset 0 0 5px var(--neon-magenta);
+/* Scanlines effect */
+.scanlines {
+  position: relative;
+}
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Spotlight effect */
+.spotlight {
+  background: radial-gradient(ellipse at center, rgba(255,215,0,0.1) 0%, transparent 70%);
+}
+
+/* Game show panel */
+.game-panel {
+  background: linear-gradient(180deg, #2d1b4e 0%, #1a0a2e 100%);
+  border: 4px solid #FFD700;
+  border-radius: 20px;
+  box-shadow:
+    0 0 20px rgba(255,215,0,0.3),
+    inset 0 2px 0 rgba(255,255,255,0.1),
+    0 10px 40px rgba(0,0,0,0.5);
+}
+
+/* Buzzer button style */
+.buzzer-btn {
+  background: linear-gradient(180deg, #FF0040 0%, #CC0030 50%, #990020 100%);
+  border: 6px solid #FFD700;
+  border-radius: 50%;
+  box-shadow:
+    0 8px 0 #990020,
+    0 12px 20px rgba(0,0,0,0.5),
+    inset 0 -5px 20px rgba(0,0,0,0.3),
+    inset 0 5px 20px rgba(255,255,255,0.2);
+  transition: all 0.1s ease;
+}
+.buzzer-btn:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 4px 0 #990020,
+    0 8px 15px rgba(0,0,0,0.5),
+    inset 0 -5px 20px rgba(0,0,0,0.3),
+    inset 0 5px 20px rgba(255,255,255,0.2);
+}
+
+/* Score display */
+.score-display {
+  background: linear-gradient(180deg, #000 0%, #1a1a1a 100%);
+  border: 3px solid #FFD700;
+  border-radius: 10px;
+  font-family: 'Courier New', monospace;
+  color: #00FF00;
+  text-shadow: 0 0 10px #00FF00;
+}
+
+/* Animated background stars */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.star {
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+/* Confetti burst animation */
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Pulse animation for winner */
+@keyframes winner-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.winner-glow {
+  animation: winner-pulse 0.5s ease-in-out infinite;
+  box-shadow: 0 0 30px #FFD700, 0 0 60px #FF6B00;
+}
+
+/* Retro button */
+.retro-btn {
+  background: linear-gradient(180deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+  border: 4px solid #CC8400;
+  border-radius: 15px;
+  color: #000;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  box-shadow:
+    0 6px 0 #996300,
+    0 10px 20px rgba(0,0,0,0.4);
+  transition: all 0.1s ease;
+}
+.retro-btn:hover {
+  background: linear-gradient(180deg, #FFEC00 0%, #FFD700 50%, #FFA500 100%);
+}
+.retro-btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 3px 0 #996300,
+    0 6px 15px rgba(0,0,0,0.4);
+}
+
+/* PIN display */
+.pin-display {
+  background: #000;
+  border: 4px solid #FFD700;
+  border-radius: 15px;
+  padding: 10px 30px;
+  font-family: 'Courier New', monospace;
+  font-size: 3rem;
+  color: #FF0040;
+  text-shadow: 0 0 20px #FF0040;
+  letter-spacing: 10px;
+}
+
+/* Player card */
+.player-card {
+  background: linear-gradient(135deg, #2d1b4e 0%, #1a0a2e 100%);
+  border: 3px solid transparent;
+  border-image: linear-gradient(135deg, #FFD700, #FF6B00) 1;
+  border-radius: 10px;
+}
+
+/* Animated border */
+@keyframes border-dance {
+  0% { border-color: #FFD700; }
+  25% { border-color: #FF6B00; }
+  50% { border-color: #FF0040; }
+  75% { border-color: #9400D3; }
+  100% { border-color: #FFD700; }
+}
+
+.animated-border {
+  animation: border-dance 2s linear infinite;
+}
+
+/* Title banner */
+.title-banner {
+  background: linear-gradient(90deg, transparent 0%, #FFD700 10%, #FFD700 90%, transparent 100%);
+  padding: 10px 60px;
+  transform: skewX(-5deg);
+}
+.title-banner > * {
+  transform: skewX(5deg);
+}
+
+/* Vintage TV frame */
+.tv-frame {
+  border: 8px solid;
+  border-image: linear-gradient(180deg, #8B4513 0%, #654321 50%, #3d2817 100%) 1;
+  border-radius: 20px;
+  box-shadow:
+    inset 0 0 30px rgba(0,0,0,0.5),
+    0 10px 40px rgba(0,0,0,0.5);
+}
+
+/* Flashing text */
+@keyframes flash {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.5; }
+}
+
+.flash-text {
+  animation: flash 1s ease-in-out infinite;
+}
+
+/* Rainbow shimmer */
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.rainbow-shimmer {
+  animation: rainbow 3s linear infinite;
 }

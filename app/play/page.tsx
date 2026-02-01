@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Radio, Trophy, LogOut } from 'lucide-react';
+import { Zap, Trophy, LogOut, Star, Music } from 'lucide-react';
 import { addPlayer, subscribeToSession, attemptBuzz, subscribeToPlayers } from '@/lib/firestore';
 import type { GameSession, Player } from '@/lib/types';
 
@@ -21,37 +21,22 @@ export default function PlayPage() {
 
   useEffect(() => {
     if (!pin || !playerId) return;
-
-    const unsubSession = subscribeToSession(pin, (sessionData) => {
-      setSession(sessionData);
-    });
-
-    const unsubPlayers = subscribeToPlayers(pin, (playersData) => {
-      setPlayers(playersData);
-    });
-
-    return () => {
-      unsubSession();
-      unsubPlayers();
-    };
+    const unsubSession = subscribeToSession(pin, setSession);
+    const unsubPlayers = subscribeToPlayers(pin, setPlayers);
+    return () => { unsubSession(); unsubPlayers(); };
   }, [pin, playerId]);
 
   const handleJoinGame = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pin.trim() || !playerName.trim()) return;
-
     setJoining(true);
     try {
       const id = await addPlayer(pin, playerName);
       setPlayerId(id);
-
-      // Haptic feedback
-      if (navigator.vibrate) {
-        navigator.vibrate(200);
-      }
+      if (navigator.vibrate) navigator.vibrate(200);
     } catch (error) {
       console.error('Failed to join game:', error);
-      alert('Failed to join game. Check the PIN and try again.');
+      alert('Impossible de rejoindre. Vérifiez le PIN.');
     } finally {
       setJoining(false);
     }
@@ -59,31 +44,18 @@ export default function PlayPage() {
 
   const handleBuzz = async () => {
     if (!pin || !playerId || buzzing || session?.state !== 'playing') return;
-
     setBuzzing(true);
     setBuzzResult(null);
-
     try {
       const success = await attemptBuzz(pin, playerId);
-
       if (success) {
-        // Success - long vibration
-        if (navigator.vibrate) {
-          navigator.vibrate([100, 50, 100, 50, 100]);
-        }
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
         setBuzzResult('success');
       } else {
-        // Failed - short vibration
-        if (navigator.vibrate) {
-          navigator.vibrate(100);
-        }
+        if (navigator.vibrate) navigator.vibrate(100);
         setBuzzResult('failed');
       }
-
-      setTimeout(() => {
-        setBuzzResult(null);
-        setBuzzing(false);
-      }, 2000);
+      setTimeout(() => { setBuzzResult(null); setBuzzing(false); }, 2000);
     } catch (error) {
       console.error('Buzz failed:', error);
       setBuzzing(false);
@@ -98,26 +70,34 @@ export default function PlayPage() {
     setPlayers([]);
   };
 
-  // Not joined yet
+  // Join screen
   if (!playerId) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 tv-noise">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="w-full max-w-md"
         >
+          {/* Title */}
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold mb-4 neon-glow-cyan text-[#00ffff]">
-              PULSEGUIZ
-            </h1>
-            <p className="text-lg text-[#e0e0ff]">Enter the game PIN to join</p>
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <h1 className="text-5xl font-black gold-text text-3d mb-2">
+                PULSEQUIZ
+              </h1>
+            </motion.div>
+            <p className="text-yellow-400 text-lg">Rejoins la partie !</p>
           </div>
 
           <form onSubmit={handleJoinGame} className="space-y-6">
-            <div>
-              <label className="block text-sm font-bold mb-2 text-[#00ffff]">
-                GAME PIN
+            {/* PIN Input */}
+            <div className="game-panel p-6">
+              <label className="block text-yellow-400 font-bold mb-3 text-lg">
+                <Star className="inline w-5 h-5 mr-2" />
+                CODE PIN
               </label>
               <input
                 type="text"
@@ -125,33 +105,37 @@ export default function PlayPage() {
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
                 maxLength={6}
-                className="w-full bg-[#1a1a2e] border-2 border-[#00ffff] rounded-lg px-6 py-4 text-3xl font-mono text-center text-white focus:outline-none focus:border-[#ff00ff] neon-border-cyan transition-all"
+                className="w-full bg-black border-4 border-yellow-400 rounded-xl px-6 py-4 text-4xl font-mono text-center text-red-400 focus:outline-none focus:border-orange-400"
+                style={{ textShadow: '0 0 20px #FF0040', letterSpacing: '10px' }}
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold mb-2 text-[#ff00ff]">
-                YOUR NAME
+            {/* Name Input */}
+            <div className="game-panel p-6">
+              <label className="block text-yellow-400 font-bold mb-3 text-lg">
+                <Trophy className="inline w-5 h-5 mr-2" />
+                TON PSEUDO
               </label>
               <input
                 type="text"
                 value={playerName}
-                onChange={(e) => setPlayerName(e.target.value.slice(0, 20))}
-                placeholder="Enter your name"
-                maxLength={20}
-                className="w-full bg-[#1a1a2e] border-2 border-[#ff00ff] rounded-lg px-6 py-4 text-xl text-center text-white focus:outline-none focus:border-[#00ffff] neon-border-magenta transition-all"
+                onChange={(e) => setPlayerName(e.target.value.slice(0, 15))}
+                placeholder="Ton nom"
+                maxLength={15}
+                className="w-full bg-black border-4 border-orange-400 rounded-xl px-6 py-4 text-2xl text-center text-white focus:outline-none focus:border-yellow-400"
                 required
               />
             </div>
 
+            {/* Join Button */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={joining || pin.length !== 6 || !playerName.trim()}
-              className="w-full bg-gradient-to-r from-[#00ffff] to-[#ff00ff] hover:from-[#00cccc] hover:to-[#cc00cc] text-black font-bold py-5 px-6 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100 text-xl"
+              className="w-full retro-btn py-5 text-2xl disabled:opacity-50"
             >
-              {joining ? 'JOINING...' : 'JOIN GAME'}
+              {joining ? 'CONNEXION...' : "C'EST PARTI !"}
             </motion.button>
           </form>
         </motion.div>
@@ -159,23 +143,18 @@ export default function PlayPage() {
     );
   }
 
-  // Joined - Game interface
+  // Game screen
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
+    <div className="min-h-screen flex flex-col tv-noise">
       {/* Header */}
-      <header className="p-4 border-b border-[#2a2a4e]">
+      <header className="p-4 border-b-4 border-yellow-400/30">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm text-[#888]">Playing as</div>
-            <div className="text-xl font-bold text-[#00ffff] neon-glow-cyan">
-              {playerName}
-            </div>
+            <div className="text-yellow-400/60 text-sm uppercase">Joueur</div>
+            <div className="text-2xl font-black gold-text">{playerName}</div>
           </div>
-          <button
-            onClick={handleLeaveGame}
-            className="text-red-500 hover:text-red-400 transition-colors"
-          >
-            <LogOut size={24} />
+          <button onClick={handleLeaveGame} className="text-red-400 hover:text-red-300 p-2">
+            <LogOut size={28} />
           </button>
         </div>
       </header>
@@ -186,40 +165,47 @@ export default function PlayPage() {
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="w-full max-w-md mb-8"
+          className="w-full max-w-sm mb-8"
         >
-          <div className="bg-[#1a1a2e] border-2 border-[#bd00ff] rounded-2xl p-6 text-center neon-border-magenta">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Trophy className="text-[#ff00ff]" size={24} />
-              <span className="text-sm text-[#888] uppercase">Your Score</span>
+          <div className="game-panel p-6 text-center">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Trophy className="text-yellow-400" size={28} />
+              <span className="text-yellow-400 uppercase font-bold">Ton Score</span>
             </div>
-            <div className="text-6xl font-bold text-[#ff00ff] neon-glow-magenta mb-2">
+            <div className="score-display inline-block px-8 py-4 text-5xl font-black mb-3">
               {currentPlayer?.score || 0}
             </div>
-            <div className="text-lg text-[#00ffff]">
-              Rank: #{myRank > 0 ? myRank : '-'} / {players.length}
+            <div className="text-white/60">
+              Classement: <span className="text-yellow-400 font-bold">#{myRank > 0 ? myRank : '-'}</span> / {players.length}
             </div>
           </div>
         </motion.div>
 
-        {/* Buzz Button */}
-        <div className="w-full max-w-md mb-8">
+        {/* Buzzer Area */}
+        <div className="w-full max-w-sm">
           <AnimatePresence mode="wait">
+            {/* Waiting state */}
             {session?.state === 'waiting' && (
               <motion.div
                 key="waiting"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
-                className="text-center"
+                className="text-center game-panel p-8"
               >
-                <Radio className="mx-auto mb-4 text-[#00ffff] animate-pulse" size={48} />
-                <div className="text-2xl font-bold text-[#00ffff] neon-glow-cyan">
-                  Waiting for host to start...
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Music className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+                </motion.div>
+                <div className="text-2xl font-bold gold-text">
+                  En attente de l'animateur...
                 </div>
               </motion.div>
             )}
 
+            {/* Playing - Can Buzz */}
             {session?.state === 'playing' && !session.activeBuzzer && (
               <motion.button
                 key="buzz"
@@ -229,86 +215,106 @@ export default function PlayPage() {
                 whileTap={{ scale: 0.9 }}
                 onClick={handleBuzz}
                 disabled={buzzing}
-                className="relative w-full aspect-square rounded-full bg-gradient-to-br from-[#ff00ff] via-[#bd00ff] to-[#ff006e] hover:from-[#ff33ff] hover:via-[#dd00ff] hover:to-[#ff3388] transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-2xl"
-                style={{
-                  boxShadow: '0 0 40px rgba(255, 0, 255, 0.6), 0 0 80px rgba(189, 0, 255, 0.4)',
-                }}
+                className="w-full aspect-square buzzer-btn flex flex-col items-center justify-center disabled:opacity-50"
               >
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Zap size={80} className="text-white mb-4" />
-                  <span className="text-4xl font-bold text-white neon-glow-magenta">
-                    BUZZ!
-                  </span>
-                </div>
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 0.5, repeat: Infinity }}
+                >
+                  <Zap size={80} className="text-white mb-2" />
+                </motion.div>
+                <span className="text-4xl font-black text-white" style={{ textShadow: '2px 2px 0 #000' }}>
+                  BUZZ !
+                </span>
               </motion.button>
             )}
 
+            {/* You buzzed! */}
             {session?.activeBuzzer === playerId && (
               <motion.div
                 key="you-buzzed"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                initial={{ scale: 0.8, opacity: 0, rotate: -5 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
                 exit={{ scale: 0.8, opacity: 0 }}
-                className="text-center p-12 bg-[#ff00ff]/20 border-4 border-[#ff00ff] rounded-3xl neon-border-magenta"
+                className="text-center game-panel p-8 winner-glow"
+                style={{ borderColor: '#00FF7F' }}
               >
-                <Zap className="mx-auto mb-6 text-[#ff00ff] animate-pulse" size={80} />
-                <div className="text-4xl font-bold text-[#ff00ff] neon-glow-magenta mb-4">
-                  YOU BUZZED!
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 0.5, repeat: Infinity }}
+                  className="text-8xl mb-4"
+                >
+                  🎉
+                </motion.div>
+                <div className="text-3xl font-black text-green-400 flash-text mb-2">
+                  TU AS BUZZÉ !
                 </div>
-                <div className="text-xl text-white">
-                  Give your answer to the host
+                <div className="text-white/80 text-lg">
+                  Donne ta réponse à l'animateur
                 </div>
               </motion.div>
             )}
 
+            {/* Someone else buzzed */}
             {session?.activeBuzzer && session.activeBuzzer !== playerId && (
               <motion.div
                 key="other-buzzed"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
-                className="text-center p-12 bg-[#888]/10 border-2 border-[#888] rounded-3xl"
+                className="text-center game-panel p-8"
+                style={{ borderColor: '#FF0040' }}
               >
-                <div className="text-2xl font-bold text-[#888] mb-2">
-                  Someone else buzzed first
+                <div className="text-6xl mb-4">😅</div>
+                <div className="text-2xl font-bold text-red-400 mb-2">
+                  Trop tard !
                 </div>
-                <div className="text-lg text-[#666]">
-                  {players.find(p => p.id === session.activeBuzzer)?.name}
+                <div className="text-white/60">
+                  {players.find(p => p.id === session.activeBuzzer)?.name} a buzzé en premier
                 </div>
               </motion.div>
             )}
 
+            {/* Paused */}
             {session?.state === 'paused' && (
               <motion.div
                 key="paused"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
-                className="text-center"
+                className="text-center game-panel p-8"
               >
-                <div className="text-2xl font-bold text-[#00ffff]">
-                  Game Paused
+                <div className="text-6xl mb-4">⏸️</div>
+                <div className="text-2xl font-bold gold-text">
+                  PAUSE
                 </div>
               </motion.div>
             )}
 
+            {/* Game Over */}
             {session?.state === 'ended' && (
               <motion.div
                 key="ended"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
-                className="text-center p-8 bg-[#00ffff]/20 border-2 border-[#00ffff] rounded-3xl neon-border-cyan"
+                className="text-center game-panel p-8 winner-glow"
               >
-                <Trophy className="mx-auto mb-4 text-[#00ffff]" size={64} />
-                <div className="text-3xl font-bold text-[#00ffff] neon-glow-cyan mb-4">
-                  GAME OVER!
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  className="text-8xl mb-4"
+                >
+                  🏆
+                </motion.div>
+                <div className="text-3xl font-black gold-text text-3d mb-4">
+                  FIN DU JEU !
                 </div>
-                <div className="text-xl text-white">
-                  Final Score: {currentPlayer?.score || 0}
+                <div className="score-display inline-block px-6 py-3 text-4xl font-bold mb-2">
+                  {currentPlayer?.score || 0}
                 </div>
-                <div className="text-lg text-[#888] mt-2">
-                  You finished #{myRank}
+                <div className="text-white/80">
+                  Tu termines #{myRank} !
                 </div>
               </motion.div>
             )}
@@ -319,44 +325,31 @@ export default function PlayPage() {
         <AnimatePresence>
           {buzzResult === 'success' && (
             <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="text-center text-2xl font-bold text-green-400"
+              initial={{ scale: 0, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0, y: 20 }}
+              className="mt-6 text-2xl font-bold text-green-400"
             >
-              ✓ You got it first!
+              ✓ PREMIER !
             </motion.div>
           )}
           {buzzResult === 'failed' && (
             <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="text-center text-2xl font-bold text-red-400"
+              initial={{ scale: 0, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0, y: 20 }}
+              className="mt-6 text-2xl font-bold text-red-400"
             >
-              ✗ Too late!
+              ✗ TROP LENT !
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Track Info */}
-        {session?.currentTrack && session.state === 'playing' && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="w-full max-w-md mt-8 text-center"
-          >
-            <div className="text-sm text-[#888] mb-1">NOW PLAYING</div>
-            <div className="text-lg font-bold text-[#00ffff]">
-              Track {session.currentTrackIndex + 1} / {session.playlist.length}
-            </div>
-          </motion.div>
-        )}
       </div>
 
       {/* Footer */}
-      <footer className="p-4 border-t border-[#2a2a4e] text-center text-sm text-[#666]">
-        Game PIN: <span className="text-[#00ffff] font-mono font-bold">{pin}</span>
+      <footer className="p-4 border-t-4 border-yellow-400/30 text-center">
+        <span className="text-yellow-400/50 text-sm">PIN: </span>
+        <span className="text-yellow-400 font-mono font-bold text-lg">{pin}</span>
       </footer>
     </div>
   );
